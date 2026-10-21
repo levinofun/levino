@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Rust-like: Фарм</title>
+<title>Rust Farm</title>
 <style>
 :root{--bg:#0e1116;--fg:#f2efe6;--ac:#ff9a2e;--panel:rgba(14,17,22,.68)}
-html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:system-ui,Segoe UI,Arial,sans-serif;user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:system-ui,Segoe UI,Arial,sans-serif;user-select:none;touch-action:none}
 canvas{display:block;width:100%;height:100%}
+svg{display:block}
 #cross{position:fixed;left:50%;top:50%;width:0;height:0;pointer-events:none}
 #cross i{position:absolute;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.6);border-radius:1px;transition:background .1s}
 #cross .t{width:2px;height:7px;left:-1px;top:-13px}#cross .b{width:2px;height:7px;left:-1px;top:6px}
@@ -15,23 +16,31 @@ canvas{display:block;width:100%;height:100%}
 #cross .d{width:2px;height:2px;left:-1px;top:-1px}
 #cross.hit i{background:var(--ac)}
 #toast{position:fixed;left:50%;top:58%;transform:translateX(-50%);font-weight:700;font-size:20px;color:var(--ac);text-shadow:0 1px 3px #000;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
-#top{position:fixed;right:12px;top:12px;font-size:12px;opacity:.8;text-align:right;padding-top:env(safe-area-inset-top,0px);text-shadow:0 1px 2px #000}
+#buffs{position:fixed;left:12px;top:calc(12px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:4px;font-size:12px;pointer-events:none}
+#buffs span{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid;border-radius:4px;padding:3px 8px}
+#buffs b{width:8px;height:8px;border-radius:50%}
 #bar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:6px;padding-bottom:env(safe-area-inset-bottom,0px)}
-.hs{position:relative;width:56px;height:56px;background:var(--panel);border:1px solid rgba(255,255,255,.18);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:26px}
+.hs{position:relative;width:56px;height:56px;background:var(--panel);border:1px solid rgba(255,255,255,.18);border-radius:5px;display:flex;align-items:center;justify-content:center}
 .hs.on{border-color:var(--ac);box-shadow:0 0 8px rgba(255,154,46,.5)}
 .hs u{position:absolute;left:4px;top:2px;font-size:10px;text-decoration:none;opacity:.6}
+.hs i,.sl i{position:absolute;right:4px;bottom:2px;font-style:normal;font-size:10px;font-weight:700;color:var(--ac)}
 #ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,12,16,.72);text-align:center;cursor:pointer}
 #ov h1{font-size:44px;margin:0 0 8px;letter-spacing:.04em;color:var(--ac)}#ov p{margin:4px;opacity:.85}
-#inv{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(8,10,14,.6);backdrop-filter:blur(3px)}
-#inv .box{background:rgba(22,26,33,.96);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:18px 22px;max-width:94vw;max-height:88vh;overflow:auto}
-#inv h2{margin:0 0 12px;font-size:20px}#inv h2 small{font-weight:400;opacity:.5;font-size:12px;margin-left:8px}
+.bd{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(8,10,14,.6);backdrop-filter:blur(3px)}
+.box{background:rgba(22,26,33,.96);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:18px 22px;max-width:94vw;max-height:88vh;overflow:auto}
+.box h2{margin:0 0 12px;font-size:20px}
 #grid{display:grid;grid-template-columns:repeat(6,72px);gap:6px}
-.sl{position:relative;height:72px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:28px}
-.sl em{font-style:normal;font-size:10px;opacity:.75;margin-top:3px}
-.sl i{position:absolute;right:5px;bottom:2px;font-style:normal;font-size:10px;font-weight:700;color:var(--ac)}
-.sl.e{opacity:.4}
-.ic{width:34px;height:30px;clip-path:polygon(15% 12%,60% 0,100% 30%,90% 80%,50% 100%,5% 78%)}
-html,body{touch-action:none}
+.sl{position:relative;height:72px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center}
+.sl.hb{border-color:rgba(255,154,46,.5)}.sl.sel{outline:2px solid var(--ac);background:rgba(255,154,46,.18)}
+.sl u{position:absolute;left:4px;top:2px;font-size:9px;opacity:.6;text-decoration:none}
+.ic{width:30px;height:27px;clip-path:polygon(15% 12%,60% 0,100% 30%,90% 80%,50% 100%,5% 78%)}
+.gm{display:inline-block;width:14px;height:12px;clip-path:polygon(15% 12%,60% 0,100% 30%,90% 80%,50% 100%,5% 78%)}
+.rc{display:flex;align-items:center;gap:14px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);min-width:310px}
+.ri{display:flex;align-items:center;gap:10px;flex:1;font-size:15px}
+.rp{display:flex;align-items:center;gap:5px;font-size:14px;min-width:70px;justify-content:flex-end}
+.rc button{background:var(--ac);color:#111;border:0;border-radius:5px;padding:6px 14px;cursor:pointer;font-weight:700}
+.rc button:disabled{background:#444;color:#999;cursor:default}
+#shopBtn{display:none;position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--ac);color:#111;font-weight:700;padding:10px 18px;border-radius:8px;box-shadow:0 2px 10px #0008;cursor:pointer}
 #tc{display:none}
 #joy{display:none;position:fixed;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.3);pointer-events:none}
 #knob{position:absolute;left:32px;top:32px;width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.35)}
@@ -39,16 +48,19 @@ html,body{touch-action:none}
 #bHit{right:22px;bottom:calc(30px + env(safe-area-inset-bottom,0px));width:88px;height:88px;font-size:34px;background:rgba(255,154,46,.55)}
 #bJump{right:128px;bottom:calc(24px + env(safe-area-inset-bottom,0px));width:60px;height:60px;font-size:22px}
 #bInv{right:14px;top:calc(14px + env(safe-area-inset-top,0px));width:50px;height:50px;font-size:22px}
-@media(max-width:520px){#grid{grid-template-columns:repeat(4,64px)}.sl{height:64px}}
+#bar.tbar{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}
+#bar.tbar .hs{width:40px;height:40px}#bar.tbar svg{transform:scale(.75)}
+@media(max-width:520px){#grid{grid-template-columns:repeat(6,48px);gap:4px}.sl{height:48px}.sl svg{transform:scale(.75)}.rc{min-width:0}}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="cross"><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="d"></i></div>
-<div id="toast"></div>
-<div id="bar"><div class="hs on"><u>1</u>⛏️</div><div class="hs"><u>2</u></div><div class="hs"><u>3</u></div><div class="hs"><u>4</u></div><div class="hs"><u>5</u></div><div class="hs"><u>6</u></div></div>
-<div id="inv"><div class="box"><h2>Инвентарь<small>Tab — закрыть</small></h2><div id="grid"></div></div></div>
-<div id="ov"><h1>RUST FARM</h1><p>Кликни, чтобы начать фармить</p><p style="font-size:13px;opacity:.6">Если мышь не захватывается — зажми ЛКМ и води, чтобы смотреть</p></div>
+<div id="toast"></div><div id="buffs"></div><div id="bar"></div>
+<div id="shopBtn" onclick="openShop()">Shop [E]</div>
+<div id="inv" class="bd"><div class="box"><h2>Inventory</h2><div id="grid"></div></div></div>
+<div id="shop" class="bd"><div class="box" id="shopBox"></div></div>
+<div id="ov"><h1>RUST FARM</h1><p>Click to play</p></div>
 <div id="tc"><div id="joy"><div id="knob"></div></div><div id="bHit" class="tb">⛏️</div><div id="bJump" class="tb">▲</div><div id="bInv" class="tb">🎒</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -63,8 +75,9 @@ scene.add(new T.HemisphereLight(0xcfe6ff,0x4a5a3a,.8));
 const sun=new T.DirectionalLight(0xfff0d0,1.1);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
 const sc=sun.shadow.camera;sc.left=sc.bottom=-45;sc.right=sc.top=45;sc.far=200;sun.shadow.bias=-.0005;scene.add(sun,sun.target);
 
-// terrain
-const H=(x,z)=>Math.sin(x*.02)*4+Math.cos(z*.025)*4+Math.sin((x+z)*.05)*2.5+Math.sin(x*.09)*Math.cos(z*.08);
+// terrain (flat plateau around the shop in the center)
+const H0=(x,z)=>Math.sin(x*.02)*4+Math.cos(z*.025)*4+Math.sin((x+z)*.05)*2.5+Math.sin(x*.09)*Math.cos(z*.08);
+const H=(x,z)=>{const d=Math.hypot(x,z),w=d<6?1:d>12?0:1-(d-6)/6,s=w*w*(3-2*w);return H0(x,z)*(1-s)+H0(0,0)*s};
 const WATER=-3.5;
 {
   const g=new T.PlaneGeometry(400,400,160,160);g.rotateX(-Math.PI/2);
@@ -80,11 +93,11 @@ const WATER=-3.5;
   w.rotation.x=-Math.PI/2;w.position.y=WATER;scene.add(w);
 }
 const rnd=(a,b)=>a+Math.random()*(b-a);
-function spot(){for(;;){const x=rnd(-180,180),z=rnd(-180,180),y=H(x,z);if(y>WATER+.8&&Math.hypot(x,z)>6)return[x,y,z]}}
+function spot(){for(;;){const x=rnd(-180,180),z=rnd(-180,180),y=H(x,z);if(y>WATER+.8&&Math.hypot(x,z)>12)return[x,y,z]}}
 const rock=c=>new T.MeshStandardMaterial({color:c,roughness:.95,metalness:0,flatShading:true});
 const M={trunk:new T.MeshLambertMaterial({color:0x5a3b22}),leaf:[0x2f6b2f,0x3a7d34,0x275a2a].map(c=>new T.MeshLambertMaterial({color:c,flatShading:true})),
  s:rock(0x8d8d88),m:rock(0x9a5b2e),f:rock(0xd6c640)};
-const objs=[],all=[],trees=[];
+const objs=[],all=[],trees=[],blocks=[];
 
 for(let i=0;i<150;i++){ // decor trees
   const [x,y,z]=spot(),g=new T.Group();g.position.set(x,y,z);
@@ -93,7 +106,7 @@ for(let i=0;i<150;i++){ // decor trees
   g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});g.rotation.y=rnd(0,6.28);scene.add(g);trees.push(g);
 }
 
-// weak spot: glowing flare like in Rust
+// weak spot flare
 const tex=fn=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');fn(x);return new T.CanvasTexture(c)};
 const FLARE=tex(x=>{x.globalCompositeOperation='lighter';
   const g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(255,255,235,1)');g.addColorStop(.12,'rgba(255,225,140,.95)');g.addColorStop(.35,'rgba(255,150,40,.35)');g.addColorStop(1,'rgba(255,120,20,0)');
@@ -102,8 +115,8 @@ const FLARE=tex(x=>{x.globalCompositeOperation='lighter';
     l.addColorStop(0,'rgba(255,200,120,0)');l.addColorStop(.5,'rgba(255,240,200,'+(i<2?.9:.55)+')');l.addColorStop(1,'rgba(255,200,120,0)');
     x.fillStyle=l;x.fillRect(-64,-1.3,128,2.6);x.restore()})});
 const HALO=tex(x=>{const g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(255,170,60,.9)');g.addColorStop(.4,'rgba(255,120,30,.35)');g.addColorStop(1,'rgba(255,100,20,0)');x.fillStyle=g;x.fillRect(0,0,128,128)});
-const RC2=new T.Raycaster(),ZV=new T.Vector3(0,0,1);
-function reMark(g,wp){ // put marker on the surface, near previous spot
+const RC2=new T.Raycaster(),ZV=new T.Vector3(0,0,1),YV=new T.Vector3(0,1,0);
+function reMark(g,wp){
   g.updateMatrixWorld(true);const u=g.userData,body=g.children[0];
   const c=g.localToWorld(new T.Vector3(0,u.s*.6,0));
   const d=new T.Vector3(rnd(-1,1),rnd(-.2,1),rnd(-1,1)).normalize().multiplyScalar(rnd(.5,.9));
@@ -123,11 +136,11 @@ function addMark(g,s){
   g.add(m);g.userData.mark=m;g.userData.s=s;reMark(g);
 }
 
-// rocks: all the same size, 4 stages (4 hits)
+// rocks: same size, 7 hp
 const RG=new T.IcosahedronGeometry(1,1);
 {const p=RG.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),l=Math.hypot(x,y,z);
   const n=1+.2*Math.sin(x*3.1+y*2.3)*Math.cos(z*2.7-x*1.3)+.1*Math.sin(y*6.1+z*5.3);p.setXYZ(i,x/l*n,y/l*n,z/l*n)}RG.computeVertexNormals()}
-const TOT={s:1000,m:600,f:300},STAGE=[1,.91,.82,.73,.64,.55,.46],S=.9;
+const TOT={s:1000,m:600,f:300},S=.9;
 function mkRock(k){
   const [x,y,z]=spot(),g=new T.Group();g.position.set(x,y,z);
   const m=new T.Mesh(RG,M[k]);m.scale.set(S,S*.75,S);m.position.y=S*.5;m.rotation.y=rnd(0,6.28);g.add(m);
@@ -137,48 +150,158 @@ function mkRock(k){
 }
 for(let i=0;i<50;i++)mkRock('s');for(let i=0;i<25;i++)mkRock('m');for(let i=0;i<25;i++)mkRock('f');
 
-// debris
+// debris + sparks
 const debris=[],DG=new T.IcosahedronGeometry(.07,0),SG=new T.SphereGeometry(.022,5,4),SM=new T.MeshBasicMaterial({color:0xffd27a,fog:false});
-function burst(pos,k){for(let i=0;i<8;i++){const d=new T.Mesh(DG,M[k]);d.position.copy(pos);d.scale.setScalar(rnd(.6,1.6));
-  d.userData={v:new T.Vector3(rnd(-2,2),rnd(1.5,4),rnd(-2,2)),t:.8};scene.add(d);debris.push(d)}
-  for(let i=0;i<7;i++){const d=new T.Mesh(SG,SM);d.position.copy(pos);d.userData={v:new T.Vector3(rnd(-3,3),rnd(1,4),rnd(-3,3)),t:.3,sp:1};scene.add(d);debris.push(d)}}
+function burst(pos,k,w){
+  for(let i=0;i<(w?3:8);i++){const d=new T.Mesh(DG,M[k]);d.position.copy(pos);d.scale.setScalar(rnd(.6,1.6));
+    d.userData={v:new T.Vector3(rnd(-2,2),rnd(1.5,4),rnd(-2,2)),t:.8};scene.add(d);debris.push(d)}
+  if(!w)for(let i=0;i<7;i++){const d=new T.Mesh(SG,SM);d.position.copy(pos);d.userData={v:new T.Vector3(rnd(-3,3),rnd(1,4),rnd(-3,3)),t:.3,sp:1};scene.add(d);debris.push(d)}
+}
 
-// pickaxe
-const tool=new T.Group();
-const wood=new T.MeshLambertMaterial({color:0x8b5a2b}),steel=new T.MeshPhongMaterial({color:0x5f666c,shininess:55}),wrap=new T.MeshLambertMaterial({color:0xb5732c});
-tool.add(new T.Mesh(new T.CylinderGeometry(.034,.03,.8,12),wood));
-const pom=new T.Mesh(new T.CylinderGeometry(.032,.05,.1,12),wood);pom.position.y=-.43;tool.add(pom);
-for(let i=0;i<6;i++){const r=new T.Mesh(new T.TorusGeometry(.037,.009,6,14),wrap);r.rotation.x=Math.PI/2;r.position.y=-.05+i*.022;tool.add(r)}
+// held tools
+function mkPick(o){
+  const g=new T.Group(),wd=new T.MeshLambertMaterial({color:o.wood}),st=new T.MeshPhongMaterial({color:o.steel,shininess:o.shine}),
+    hm=new T.MeshPhongMaterial({color:o.hub,shininess:60}),wr=new T.MeshLambertMaterial({color:o.wrap});
+  g.add(new T.Mesh(new T.CylinderGeometry(.034,.03,.8,12),wd));
+  const pom=new T.Mesh(new T.CylinderGeometry(.032,.05,.1,12),wd);pom.position.y=-.43;g.add(pom);
+  for(let i=0;i<6;i++){const r=new T.Mesh(new T.TorusGeometry(.037,.009,6,14),wr);r.rotation.x=Math.PI/2;r.position.y=-.05+i*.022;g.add(r)}
+  const head=new T.Group(),R0=o.R,A=o.A,N=8,th=o.th;
+  for(const sg of [1,-1])for(let i=0;i<N;i++){
+    const a0=i/N*A,a1=(i+1)/N*A,p0=new T.Vector3(0,R0*Math.cos(a0)-R0,sg*R0*Math.sin(a0)),p1=new T.Vector3(0,R0*Math.cos(a1)-R0,sg*R0*Math.sin(a1));
+    const rA=th-(th-.008)*i/N,rB=th-(th-.008)*(i+1)/N,dir=p1.clone().sub(p0),c=new T.Mesh(new T.CylinderGeometry(rB,rA,dir.length(),10),st);
+    c.position.copy(p0).add(p1).multiplyScalar(.5);c.quaternion.setFromUnitVectors(YV,dir.normalize());head.add(c)}
+  const hz=new T.Mesh(new T.CylinderGeometry(.05,.05,.12,14),hm);hz.rotation.x=Math.PI/2;head.add(hz);
+  const col=new T.Mesh(new T.CylinderGeometry(.05,.034,.12,12),hm);col.position.y=-.07;head.add(col);
+  head.position.y=.4;g.add(head);return g}
+const pickM=mkPick({wood:0x8b5a2b,steel:0x5f666c,shine:55,hub:0x5f666c,wrap:0xb5732c,R:.6,A:.55,th:.045});
+function mkIce(){
+  const g=new T.Group(),wd=new T.MeshLambertMaterial({color:0x5a3a1c}),st=new T.MeshPhongMaterial({color:0xa9d3ee,shininess:130}),gd=new T.MeshPhongMaterial({color:0xd9ab3c,shininess:70}),wr=new T.MeshLambertMaterial({color:0x2f6fb5});
+  g.add(new T.Mesh(new T.CylinderGeometry(.03,.026,.74,12),wd));
+  const sp=new T.Mesh(new T.ConeGeometry(.03,.12,10),st);sp.rotation.x=Math.PI;sp.position.y=-.43;g.add(sp);
+  for(let i=0;i<5;i++){const r=new T.Mesh(new T.TorusGeometry(.034,.008,6,14),wr);r.rotation.x=Math.PI/2;r.position.y=-.2+i*.024;g.add(r)}
+  const head=new T.Group(),R0=.55,A=.9,N=10,th=.05;
+  for(let i=0;i<N;i++){const a0=i/N*A,a1=(i+1)/N*A,p0=new T.Vector3(0,R0*Math.cos(a0)-R0,-R0*Math.sin(a0)),p1=new T.Vector3(0,R0*Math.cos(a1)-R0,-R0*Math.sin(a1));
+    const rA=th-(th-.004)*i/N,rB=th-(th-.004)*(i+1)/N,dir=p1.clone().sub(p0),c=new T.Mesh(new T.CylinderGeometry(rB,rA,dir.length(),10),st);
+    c.position.copy(p0).add(p1).multiplyScalar(.5);c.quaternion.setFromUnitVectors(YV,dir.normalize());head.add(c)}
+  const adze=new T.Mesh(new T.BoxGeometry(.03,.14,.11),st);adze.position.set(0,-.02,.1);adze.rotation.x=-.5;head.add(adze);
+  const hz=new T.Mesh(new T.CylinderGeometry(.045,.045,.1,14),gd);hz.rotation.x=Math.PI/2;head.add(hz);
+  const cl=new T.Mesh(new T.CylinderGeometry(.045,.03,.1,12),gd);cl.position.y=-.06;head.add(cl);
+  head.position.y=.37;g.add(head);return g}
+const iceM=mkIce();
+const drillM=new T.Group();let drillBit=null;
+{const om=new T.MeshPhongMaterial({color:0xe0801c,shininess:40}),dk=new T.MeshPhongMaterial({color:0x3a3f44,shininess:30}),bm=new T.MeshPhongMaterial({color:0xaeb4ba,shininess:90});
+ 
+ 
+ 
+ 
+ const hm=(c,sh)=>new T.MeshPhongMaterial({color:c,shininess:sh||40});
+ const ad=(g,m,x,y,z,rx)=>{const o=new T.Mesh(g,m);o.position.set(x,y,z);if(rx)o.rotation.x=rx;drillM.add(o);return o};
+ const orange=hm(0xe8821e,50),black=hm(0x24282c,30),steelM=hm(0xb8bec4,100),yel=hm(0xf2c230,40);
+ ad(new T.CylinderGeometry(.075,.075,.34,18),orange,0,0,.06,Math.PI/2);
+ ad(new T.CylinderGeometry(.079,.079,.05,18),black,0,0,.24,Math.PI/2);
+ ad(new T.CylinderGeometry(.06,.075,.09,18),black,0,0,-.15,-Math.PI/2);
+ ad(new T.BoxGeometry(.05,.19,.07),black,0,-.14,.1).rotation.x=.2;
+ ad(new T.BoxGeometry(.012,.04,.02),yel,0,-.08,.05);
+ ad(new T.BoxGeometry(.11,.07,.15),black,0,-.25,.12);
+ ad(new T.BoxGeometry(.112,.02,.152),orange,0,-.225,.12);
+ ad(new T.CylinderGeometry(.014,.014,.15,8),black,-.09,-.05,-.05).rotation.z=1;
+ ad(new T.CylinderGeometry(.05,.05,.07,14),steelM,0,0,-.22,Math.PI/2);
+ const bg=new T.Group();bg.position.z=-.255;bg.rotation.x=-Math.PI/2;drillM.add(bg);
+ const spin=new T.Group();bg.add(spin);drillBit=spin;
+ const core=new T.Mesh(new T.ConeGeometry(.026,.4,10),steelM);core.position.y=.2;spin.add(core);
+ const pts=[];for(let i=0;i<=40;i++){const t=i/40;pts.push(new T.Vector3(Math.cos(t*Math.PI*7)*.03*(1-t*.75),t*.38,Math.sin(t*Math.PI*7)*.03*(1-t*.75)))}
+ spin.add(new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),60,.009,6),steelM))}
+const T3={pick:pickM,axe:iceM,drill:drillM};for(const q in T3){T3[q].visible=false;cam.add(T3[q])}
 
-const head=new T.Group();
-const R0=.6,A=.55,N=8,YV=new T.Vector3(0,1,0);
-for(const sg of [1,-1])for(let i=0;i<N;i++){
-  const a0=i/N*A,a1=(i+1)/N*A,p0=new T.Vector3(0,R0*Math.cos(a0)-R0,sg*R0*Math.sin(a0)),p1=new T.Vector3(0,R0*Math.cos(a1)-R0,sg*R0*Math.sin(a1));
-  const rA=.045-.037*i/N,rB=.045-.037*(i+1)/N,dir=p1.clone().sub(p0),c=new T.Mesh(new T.CylinderGeometry(rB,rA,dir.length(),10),steel);
-  c.position.copy(p0).add(p1).multiplyScalar(.5);c.quaternion.setFromUnitVectors(YV,dir.normalize());head.add(c)}
-
-const hubZ=new T.Mesh(new T.CylinderGeometry(.05,.05,.12,14),steel);hubZ.rotation.x=Math.PI/2;head.add(hubZ);
-const collar=new T.Mesh(new T.CylinderGeometry(.05,.034,.12,12),steel);collar.position.y=-.07;head.add(collar);
-head.position.y=.4;tool.add(head);cam.add(tool);
-
+// merchant stall (center of the map)
+{const st=new T.Group();st.position.set(0,H(0,0)-.05,0);
+ const ad=(g,c,x,y,z)=>{const o=new T.Mesh(g,new T.MeshLambertMaterial({color:c,flatShading:true}));o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;st.add(o);return o};
+ ad(new T.BoxGeometry(3.2,1.05,.9),0x7a5230,0,.52,1);ad(new T.BoxGeometry(3.4,.1,1.1),0x9a6b3a,0,1.08,1);
+ for(const x of [-1.6,1.6])for(const z of [1.6,-1.1])ad(new T.CylinderGeometry(.07,.07,2.8,8),0x5a3b22,x,1.4,z);
+ ad(new T.BoxGeometry(3.9,.1,3.1),0xb33a2e,0,2.85,.25).rotation.x=.1;
+ ad(new T.BoxGeometry(3.2,1.8,.15),0x6b4a2b,0,1.2,-1.1);
+ [0x8a8a8a,0xc4772e,0xd6c640].forEach((c,i)=>ad(new T.BoxGeometry(.45,.3,.4),c,-.9+i*.9,1.28,1));
+ ad(new T.CylinderGeometry(.22,.26,.8,10),0x2d3340,0,.4,-.1);
+ ad(new T.CylinderGeometry(.27,.24,.8,10),0x3b5a8a,0,1.2,-.1);
+ ad(new T.SphereGeometry(.2,12,10),0xe0b08c,0,1.85,-.1);
+ ad(new T.CylinderGeometry(.34,.34,.04,14),0x4a3220,0,2.02,-.1);ad(new T.CylinderGeometry(.2,.22,.2,12),0x4a3220,0,2.14,-.1);
+ for(const x of [-.07,.07])ad(new T.SphereGeometry(.025,6,6),0x111111,x,1.88,.09);
+ for(const x of [-.3,.3])ad(new T.CylinderGeometry(.07,.07,.55,8),0x3b5a8a,x,1.25,.2).rotation.x=1.1;
+ const cn=document.createElement('canvas');cn.width=256;cn.height=64;const c2=cn.getContext('2d');
+ c2.fillStyle='#2b1d12';c2.fillRect(0,0,256,64);c2.strokeStyle='#e8a33a';c2.lineWidth=4;c2.strokeRect(2,2,252,60);
+ c2.fillStyle='#ffd27a';c2.font='bold 36px sans-serif';c2.textAlign='center';c2.fillText('SHOP',128,46);
+ const sg=new T.Mesh(new T.PlaneGeometry(1.8,.45),new T.MeshBasicMaterial({map:new T.CanvasTexture(cn)}));sg.position.set(0,2.5,1.82);st.add(sg);
+ const lamp=new T.PointLight(0xffa550,.9,9);lamp.position.set(0,2.4,.8);st.add(lamp);
+ scene.add(st);[[-1.2,1],[-.4,1],[.4,1],[1.2,1],[0,-.1]].forEach(([x,z])=>blocks.push({position:{x,z}}))}
 
 // state
-const P={pos:new T.Vector3(0,H(0,0)+1.7,0),vy:0,yaw:0,pitch:0,ground:true};
-const keys={};let started=false,drag=false,swing=0,cool=0,step=0,invOpen=false;
-const inv={s:0,m:0,f:0},NM={s:'камня',m:'металла',f:'серы'},LB={s:'Камень',m:'Металл',f:'Сера'},CL={s:'#9a9a94',m:'#b8692f',f:'#e2d24a'};
-const toast=document.getElementById('toast'),ov=document.getElementById('ov'),invEl=document.getElementById('inv'),crossEl=document.getElementById('cross');let tt=0;
+const P={pos:new T.Vector3(0,H(0,8)+1.7,8),vy:0,yaw:0,pitch:0,ground:true};
+const keys={};let started=false,drag=false,swing=0,cool=0,step=0,invOpen=false,shopMode=false,swRate=1.3,act=null,near=false,lastB='';
+const NM={s:'Stone',m:'Metal',f:'Sulfur'},CL={s:'#9a9a94',m:'#b8692f',f:'#e2d24a'};
+const toast=document.getElementById('toast'),ov=document.getElementById('ov'),invEl=document.getElementById('inv'),shopEl=document.getElementById('shop'),
+  shopBox=document.getElementById('shopBox'),gridEl=document.getElementById('grid'),shopBtn=document.getElementById('shopBtn'),
+  crossEl=document.getElementById('cross'),buffsEl=document.getElementById('buffs');let tt=0;
 function say(t){toast.textContent=t;toast.style.opacity=1;tt=.8}
-const used=k=>Math.ceil(inv[k]/1000);
-function capLeft(k){let o=1;for(const j of ['s','m','f'])if(j!==k)o+=used(j);return Math.max(0,(24-o)*1000-inv[k])}
-function renderInv(){
-  const it=[['<span>⛏️</span>','Кирка','']];
-  for(const k of ['s','m','f']){let c=inv[k];while(c>0){it.push([`<div class="ic" style="background:${CL[k]}"></div>`,LB[k],Math.min(c,1000)]);c-=1000}}
-  let h='';for(let i=0;i<24;i++){const s=it[i];h+=s?`<div class="sl">${s[0]}<em>${s[1]}</em>${s[2]!==''?'<i>'+s[2]+'</i>':''}</div>`:'<div class="sl e"></div>'}
-  document.getElementById('grid').innerHTML=h;
-}
-function toggleInv(){invOpen=!invOpen;invEl.style.display=invOpen?'flex':'none';
-  if(invOpen){renderInv();try{document.exitPointerLock()}catch(e){}}
-  else{try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}sfx('ui')}
+
+// items
+const TL={pick:{n:'Pickaxe',dmg:1,cd:1,rate:1.3,delay:350},axe:{n:'Ice Axe',dmg:2,cd:1,rate:1.3,delay:350},drill:{n:'Drill',dmg:1,cd:.2,rate:5,delay:80}};
+const TEA={tea1:{n:'Run Tea',c:'#5ec96a',k:'run'},tea2:{n:'Yield Tea',c:'#ffb13b',k:'yield'},tea3:{n:'Haste Tea',c:'#b07cff',k:'speed'}};
+const PRICE={pick:[0,'m'],axe:[2000,'m'],drill:[5000,'m'],tea1:[1000,'s'],tea3:[1500,'s'],tea2:[2000,'s']};
+const BUF=[['run','Run','#5ec96a'],['yield','Yield','#ffb13b'],['speed','Haste','#b07cff']],buffs={run:0,yield:0,speed:0},bought={};
+const NS=30,slots=Array(NS).fill(null);let sel=0,selSlot=-1,dragFrom=-1;
+const svg=b=>'<svg viewBox="0 0 32 32" width="34" height="34">'+b+'</svg>';
+const ICN={
+ pick:svg('<line x1="7" y1="27" x2="19" y2="11" stroke="#9a6a35" stroke-width="3.4" stroke-linecap="round"/><path d="M9.5 5Q24 2 28.5 18" fill="none" stroke="#b9c1c8" stroke-width="3.6" stroke-linecap="round"/>'),
+ axe:svg('<line x1="7" y1="27" x2="19" y2="11" stroke="#6b4423" stroke-width="3.4" stroke-linecap="round"/><path d="M19 11Q9 2 3 13" fill="none" stroke="#a9d3ee" stroke-width="3.4" stroke-linecap="round"/><path d="M19 11l7-3 2 4-7 3z" fill="#a9d3ee"/><circle cx="19" cy="11" r="3.2" fill="#d9ab3c"/>'),
+ drill:svg('<rect x="4" y="11" width="15" height="9" rx="2.5" fill="#e0801c"/><rect x="8" y="19" width="5" height="9" rx="1.5" fill="#3a3f44"/><rect x="19" y="13" width="3" height="5" fill="#3a3f44"/><path d="M22 13.5L30 15.5L22 17.5Z" fill="#aeb4ba"/>')};
+const teaSvg=c=>svg('<path d="M6 14h16v5a8 8 0 0 1-16 0z" fill="'+c+'"/><path d="M22 16h2a3 3 0 0 1 0 6h-2" fill="none" stroke="'+c+'" stroke-width="2"/><path d="M11 4c-2 2 2 3 0 7M16 4c-2 2 2 3 0 7" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.6" stroke-linecap="round"/>');
+const ico=t=>ICN[t]||(TEA[t]?teaSvg(TEA[t].c):'<div class="ic" style="background:'+CL[t]+'"></div>');
+const NAME=t=>TL[t]?TL[t].n:TEA[t].n;
+const actTool=()=>{const s=slots[sel];return s&&TL[s.t]?s.t:null};
+const count=t=>{let c=0;for(const s of slots)if(s&&s.t===t)c+=s.n;return c};
+const room=t=>{let r=0;for(const s of slots){if(!s)r+=1000;else if(s.t===t)r+=1000-s.n}return r};
+function addItem(t,n){let left=n;
+  if(!TL[t])for(const s of slots)if(left>0&&s&&s.t===t){const a=Math.min(1000-s.n,left);s.n+=a;left-=a}
+  const order=TL[t]?[...Array(NS).keys()]:[...Array(NS-6).keys()].map(i=>i+6).concat([0,1,2,3,4,5]);
+  for(const i of order){if(left<=0)break;if(!slots[i]){const a=Math.min(TL[t]?1:1000,left);slots[i]={t,n:a};left-=a}}
+  renderBar();return n-left}
+function take(t,n){for(let i=NS-1;i>=0&&n>0;i--){const s=slots[i];if(s&&s.t===t){const a=Math.min(s.n,n);s.n-=a;n-=a;if(s.n<=0)slots[i]=null}}renderBar()}
+function moveSlot(a,b){if(a===b)return;const A=slots[a],B=slots[b];if(!A)return;
+  if(B&&B.t===A.t&&!TL[A.t]){const m=Math.min(1000-B.n,A.n);B.n+=m;A.n-=m;if(A.n<=0)slots[a]=null}else{slots[a]=B;slots[b]=A}
+  renderBar();renderInv()}
+function drink(i){const s=slots[i];if(!s||!TEA[s.t])return;buffs[TEA[s.t].k]=60;s.n--;if(s.n<=0)slots[i]=null;sfx('drink');renderBar();if(invOpen)renderInv()}
+function slotClick(i){const s=slots[i];
+  if(selSlot===i){if(s&&TEA[s.t])drink(i);selSlot=-1}
+  else if(selSlot<0){if(s)selSlot=i}
+  else{moveSlot(selSlot,i);selSlot=-1}
+  renderInv()}
+function selectHot(i){sel=i;renderBar();sfx('ui')}
+function renderBar(){let h='';
+  for(let i=0;i<6;i++){const s=slots[i];h+='<div class="hs'+(i===sel?' on':'')+'" onclick="selectHot('+i+')"><u>'+(i+1)+'</u>'+(s?ico(s.t):'')+(s&&!TL[s.t]?'<i>'+s.n+'</i>':'')+'</div>'}
+  document.getElementById('bar').innerHTML=h}
+function renderInv(){let h='';
+  for(let i=0;i<NS;i++){const s=slots[i];
+    h+='<div class="sl'+(i<6?' hb':'')+(selSlot===i?' sel':'')+'" data-i="'+i+'"'+(s?' draggable="true"':'')+'>'+(s?ico(s.t)+(TL[s.t]?'':'<i>'+s.n+'</i>'):'')+(i<6?'<u>'+(i+1)+'</u>':'')+'</div>'}
+  gridEl.innerHTML=h}
+const canBuy=k=>{const [p,c]=PRICE[k];return !(TL[k]&&bought[k])&&count(c)>=p&&(p>=1000||room(k)>0)};
+function renderShop(){let q='<h2>Shop</h2>';
+  for(const k in PRICE){const [p,c]=PRICE[k],own=TL[k]&&bought[k];
+    q+='<div class="rc"><div class="ri">'+ico(k)+'<b>'+NAME(k)+'</b></div><div class="rp">'+(p?'<span>'+p+'</span><i class="gm" style="background:'+CL[c]+'"></i>':'<span>Free</span>')+'</div><button data-buy="'+k+'"'+(canBuy(k)?'':' disabled')+'>'+(own?'Owned':'Buy')+'</button></div>'}
+  shopBox.innerHTML=q}
+function buy(k){if(!canBuy(k))return;const [p,c]=PRICE[k];take(c,p);addItem(k,1);if(TL[k])bought[k]=1;sfx('crit');renderShop()}
+function setUI(m){invOpen=!!m;shopMode=m==='shop';holdHit=false;selSlot=-1;
+  invEl.style.display=m==='inv'?'flex':'none';shopEl.style.display=m==='shop'?'flex':'none';
+  if(m==='inv')renderInv();if(m==='shop')renderShop();
+  if(invOpen){try{document.exitPointerLock()}catch(e){}}else{try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}sfx('ui')}
+function toggleInv(){setUI(invOpen?null:'inv')}
+function openShop(){setUI('shop')}
+gridEl.onclick=e=>{const s=e.target.closest('.sl');if(s)slotClick(+s.dataset.i)};
+shopBox.onclick=e=>{const b=e.target.closest('[data-buy]');if(b)buy(b.dataset.buy)};
+gridEl.addEventListener('dragstart',e=>{const s=e.target.closest('.sl');if(s&&slots[+s.dataset.i]){dragFrom=+s.dataset.i;e.dataTransfer.setData('text','x')}});
+gridEl.addEventListener('dragover',e=>e.preventDefault());
+gridEl.addEventListener('drop',e=>{e.preventDefault();const s=e.target.closest('.sl');if(s&&dragFrom>=0){moveSlot(dragFrom,+s.dataset.i);dragFrom=-1}});
+addEventListener('wheel',e=>{if(started&&!invOpen)selectHot((sel+(e.deltaY>0?1:5))%6)});
+renderBar();
 
 // audio
 let AC,master,noiseBuf;
@@ -203,39 +326,49 @@ function sfx(k){if(!AC)return;try{switch(k){
   case 'ore':tone('triangle',1800,.4,.3,1500);tone('square',2400,.2,.06);noise('highpass',4000,.07,.35);break;
   case 'sul':noise('highpass',3000,.16,.5);tone('triangle',900,.1,.15,500);break;
   case 'crit':tone('sine',880,.25,.25);setTimeout(()=>tone('sine',1320,.35,.2),70);break;
-  case 'miss':tone('sine',120,.14,.5,55);noise('lowpass',400,.1,.35);break;
+  case 'chip':noise('highpass',1800,.08,.25);tone('square',300,.04,.06,150);break;
   case 'break':noise('lowpass',600,.5,.9,120);tone('sawtooth',90,.4,.3,40);break;
+  case 'drink':tone('sine',400,.2,.15,700);setTimeout(()=>noise('lowpass',900,.15,.15),60);break;
   case 'step':noise('lowpass',450+Math.random()*250,.07,.3);break;
   case 'jump':tone('sine',200,.12,.15,420);break;
   case 'ui':tone('sine',520,.05,.1);break}}catch(e){}}
 
 addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space')e.preventDefault();
-  if((e.code==='Tab'||e.code==='KeyI')&&!e.repeat){e.preventDefault();if(started||invOpen)toggleInv()}});
+  if((e.code==='Tab'||e.code==='KeyI')&&!e.repeat){e.preventDefault();if(started||invOpen)toggleInv()}
+  if(e.code==='KeyE'&&!e.repeat){if(invOpen&&shopMode)setUI(null);else if(near&&started&&!invOpen)openShop()}
+  if(/^Digit[1-6]$/.test(e.code)&&started)selectHot(+e.code.slice(5)-1)});
 addEventListener('keyup',e=>keys[e.code]=false);
 function look(dx,dy){P.yaw-=dx*.0025;P.pitch=Math.max(-1.45,Math.min(1.45,P.pitch-dy*.0025))}
 addEventListener('mousemove',e=>{if(!started||invOpen)return;if(document.pointerLockElement===cv||drag)look(e.movementX,e.movementY)});
-addEventListener('mouseup',()=>drag=false);
+addEventListener('mouseup',()=>{drag=false;holdHit=false});
 addEventListener('mousedown',e=>{
-  initAudio();if(invOpen)return;
+  initAudio();if(isTouch||invOpen)return;
   if(!started){started=true;ov.style.display='none';try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(_){}return}
-  drag=true;hit();
+  drag=true;holdHit=true;hit(true);
 });
-document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&started&&!invOpen){started=false;ov.style.display='flex'}});
+document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&started&&!invOpen){started=false;holdHit=false;ov.style.display='flex'}});
 const rc=new T.Raycaster();rc.far=3;
-function hit(){
-  if(cool>0||invOpen)return;swing=1;cool=1;sfx('swing');setTimeout(strike,350)}
-function strike(){if(invOpen)return;
+function hit(fresh){
+  const s0=slots[sel];
+  if(s0&&TEA[s0.t]){if(fresh)drink(sel);return}
+  const a=actTool();if(!a){if(fresh&&tt<=0&&!invOpen)say('No tool equipped');return}
+  if(cool>0||invOpen)return;
+  const tl=TL[a],hs=buffs.speed>0?1.25:1;swing=1;swRate=tl.rate*hs;cool=tl.cd/hs;sfx('swing');setTimeout(()=>strike(tl),tl.delay/hs)}
+function strike(tl){if(invOpen)return;
   rc.setFromCamera({x:0,y:0},cam);
   const hs=rc.intersectObjects(objs,true);if(!hs.length)return;
   let o=hs[0].object;while(o&&!o.userData.res)o=o.parent;if(!o)return;
-  const u=o.userData;u.shake=.2;
-  if(!hs[0].object.userData.marker){sfx('miss');return}
-  if(capLeft(u.res)<=0){say('Инвентарь полон');return}u.hp--;let n=u.hp<=0?u.left:Math.min(u.left,Math.round(u.tot/u.max*rnd(.85,1.15)));u.left-=n;n=Math.min(n,capLeft(u.res));inv[u.res]+=n;if(invOpen)renderInv();
-  sfx({s:'rock',m:'ore',f:'sul'}[u.res]);sfx('crit');say('+'+n+' '+NM[u.res]);
-  crossEl.classList.add('hit');setTimeout(()=>crossEl.classList.remove('hit'),150);
-  const mp=u.mark.getWorldPosition(new T.Vector3());burst(mp,u.res);
-  if(u.hp<=0){u.fall=.45;u.fs=o.scale.x;objs.splice(objs.indexOf(o),1);sfx('break')}
-  else{u.ts=STAGE[u.max-u.hp];reMark(o,mp)}
+  const u=o.userData,onSp=!!hs[0].object.userData.marker;u.shake=.2;
+  if(room(u.res)<=0){say('Inventory full');return}
+  const dm=Math.min(tl.dmg*(onSp?1:1/3),u.hp);u.hp-=dm;
+  let n=u.hp<=1e-6?u.left:Math.min(u.left,Math.round(u.tot/u.max*dm*rnd(.85,1.15)));u.left-=n;
+  n=addItem(u.res,Math.round(n*(buffs.yield>0?1.25:1)));if(invOpen)renderInv();
+  const mp=u.mark.getWorldPosition(new T.Vector3());
+  if(n>0)say('+'+n+' '+NM[u.res]);
+  if(onSp){sfx({s:'rock',m:'ore',f:'sul'}[u.res]);sfx('crit');crossEl.classList.add('hit');setTimeout(()=>crossEl.classList.remove('hit'),150);burst(mp,u.res)}
+  else{sfx('chip');burst(hs[0].point,u.res,true)}
+  if(u.hp<=1e-6){u.fall=.45;u.fs=o.scale.x;objs.splice(objs.indexOf(o),1);sfx('break')}
+  else{u.ts=Math.max(.4,1-.09*(u.max-u.hp));if(onSp)reMark(o,mp)}
 }
 
 // ---- mobile controls ----
@@ -243,14 +376,14 @@ const isTouch=matchMedia('(pointer:coarse)').matches||/Android|iPhone|iPad|Mobil
 const joy={x:0,y:0},tc=document.getElementById('tc'),jEl=document.getElementById('joy'),kEl=document.getElementById('knob');
 let holdHit=false,jt=null,jo=null,lt=null;
 if(isTouch){
-  document.getElementById('bar').style.display='none';
-  const ps=ov.querySelectorAll('p');ps[0].textContent='Нажми, чтобы начать фармить';ps[1].textContent='Левый палец — идти, правый — смотреть';
-  const tStart=e=>{e.preventDefault();initAudio();
+  document.getElementById('bar').classList.add('tbar');shopBtn.textContent='Shop';ov.querySelector('p').textContent='Tap to play';
+  const UI='.box,#bar,#shopBtn';
+  const tStart=e=>{if(e.target.closest&&e.target.closest(UI)){initAudio();return}e.preventDefault();initAudio();
     for(const t of e.changedTouches){const el=t.target;
       if(!started&&!invOpen){started=true;ov.style.display='none';tc.style.display='block';continue}
       if(el.closest&&el.closest('#bInv')){toggleInv();continue}
-      if(invOpen){if(el===invEl)toggleInv();continue}
-      if(el.closest&&el.closest('#bHit')){holdHit=true;hit();continue}
+      if(invOpen){if(el.classList&&el.classList.contains('bd'))setUI(null);continue}
+      if(el.closest&&el.closest('#bHit')){holdHit=true;hit(true);continue}
       if(el.closest&&el.closest('#bJump')){keys.Space=true;continue}
       if(t.clientX<innerWidth*.45&&jt===null){jt=t.identifier;jo={x:t.clientX,y:t.clientY};jEl.style.display='block';jEl.style.left=(jo.x-60)+'px';jEl.style.top=(jo.y-60)+'px';kEl.style.transform='translate(0,0)'}
       else if(lt===null)lt={id:t.identifier,x:t.clientX,y:t.clientY}}};
@@ -259,7 +392,7 @@ if(isTouch){
       if(t.identifier===jt){let dx=t.clientX-jo.x,dy=t.clientY-jo.y;const m=Math.hypot(dx,dy),mx=50;if(m>mx){dx*=mx/m;dy*=mx/m}
         kEl.style.transform='translate('+dx+'px,'+dy+'px)';const nx=dx/mx,ny=dy/mx,dz=Math.hypot(nx,ny)<.18;joy.x=dz?0:nx;joy.y=dz?0:ny}
       else if(lt&&t.identifier===lt.id&&started&&!invOpen){look((t.clientX-lt.x)*1.8,(t.clientY-lt.y)*1.8);lt.x=t.clientX;lt.y=t.clientY}}};
-  const tEnd=e=>{e.preventDefault();
+  const tEnd=e=>{if(!(e.target.closest&&e.target.closest(UI)))e.preventDefault();
     for(const t of e.changedTouches){
       if(t.identifier===jt){jt=null;joy.x=joy.y=0;jEl.style.display='none'}
       if(lt&&t.identifier===lt.id)lt=null}
@@ -274,15 +407,18 @@ function push(o,r){const dx=P.pos.x-o.position.x,dz=P.pos.z-o.position.z,d=Math.
 function loop(){
   requestAnimationFrame(loop);
   const dt=Math.min(clock.getDelta(),.05),now=clock.elapsedTime,live=started&&!invOpen;
+  for(const b of BUF)if(buffs[b[0]]>0)buffs[b[0]]=Math.max(0,buffs[b[0]]-dt);
+  const bs=BUF.map(b=>buffs[b[0]]>0?'<span style="border-color:'+b[2]+'"><b style="background:'+b[2]+'"></b>'+b[1]+' '+Math.ceil(buffs[b[0]])+'s</span>':'').join('');
+  if(bs!==lastB){lastB=bs;buffsEl.innerHTML=bs}
   if(live){
-    const jm=Math.hypot(joy.x,joy.y),sp=5.5,f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-joy.y,s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+joy.x;
+    const sp=5.5*(buffs.run>0?1.25:1),f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-joy.y,s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+joy.x;
     const l=Math.hypot(f,s)||1,sy=Math.sin(P.yaw),cy=Math.cos(P.yaw);
     P.pos.x+=(-sy*f+cy*s)/l*sp*dt*(f||s?1:0);P.pos.z+=(-cy*f-sy*s)/l*sp*dt*(f||s?1:0);
     P.pos.x=Math.max(-195,Math.min(195,P.pos.x));P.pos.z=Math.max(-195,Math.min(195,P.pos.z));
     let gh=Math.max(H(P.pos.x,P.pos.z),WATER-.6);const fy=P.pos.y-1.7;
     for(const o of objs){const q=o.scale.x,Rr=o.userData.r*q,top=o.position.y+q*.95,d=Math.hypot(P.pos.x-o.position.x,P.pos.z-o.position.z);
       if(fy>=top-.3){if(d<Rr)gh=Math.max(gh,o.position.y+q*(.1+.85*Math.sqrt(1-d*d/(Rr*Rr))))}else push(o,Rr)}
-    for(const o of trees)push(o,.7);
+    for(const o of trees)push(o,.7);for(const o of blocks)push(o,.7);
     const gy=gh+1.7;
     if(keys.Space&&P.ground){P.vy=7;P.ground=false;sfx('jump')}
     P.vy-=20*dt;P.pos.y+=P.vy*dt;
@@ -292,10 +428,12 @@ function loop(){
   const bob=moving?Math.sin(now*10)*.04:0;
   if(moving){step-=dt;if(step<=0){step=.42;sfx('step')}}
   cam.position.set(P.pos.x,P.pos.y+bob,P.pos.z);cam.rotation.set(P.pitch,P.yaw,0,'YXZ');
-  // pickaxe swing: wind-up, strike, recover
+  // tool swing
   cool-=dt;if(holdHit&&live)hit();let k=0;
-  if(swing>0){swing=Math.max(0,swing-dt*1.3);const t=1-swing,e=x=>x*x*(3-2*x);k=t<.3?-.8*e(t/.3):t<.45?-.8+2*e((t-.3)/.15):1.2*(1-e((t-.45)/.55))}
-  tool.rotation.set(-.2-k*.7,.1,.3-k*.12);tool.position.set(.45-k*.06,-.55-k*.06,-.8-k*.08);
+  if(swing>0){swing=Math.max(0,swing-dt*swRate);const t=1-swing,e=x=>x*x*(3-2*x);k=t<.3?-.8*e(t/.3):t<.45?-.8+2*e((t-.3)/.15):1.2*(1-e((t-.45)/.55))}
+  act=actTool();const cur=act?T3[act]:null;for(const q in T3)T3[q].visible=(T3[q]===cur);
+  if(cur){if(act==='drill'){const j=swing>0?Math.sin(now*90)*.006:0;cur.rotation.set(-.04-k*.06,-.12,.04);cur.position.set(.38+j,-.4+j,-.75-k*.1);drillBit.rotation.y+=swing>0?dt*40:dt*3}
+    else{cur.rotation.set(-.2-k*.7,.1,.3-k*.12);cur.position.set(.45-k*.06,-.55-k*.06,-.8-k*.08)}}
   for(const o of all){const u=o.userData;
     u.mark.userData.spr.scale.setScalar(.5+Math.sin(now*6+o.id)*.06);
     if(u.shake>0){u.shake-=dt;o.rotation.z=Math.sin(now*60)*u.shake*.1}else if(!u.fall)o.rotation.z=0;
@@ -304,6 +442,7 @@ function loop(){
     if(u.respawn>0){u.respawn-=dt;if(u.respawn<=0){u.respawn=0;u.ts=1;o.visible=true;o.scale.setScalar(1);o.rotation.z=0;u.hp=u.max;u.left=u.tot;reMark(o);objs.push(o)}}
   }
   for(let i=debris.length-1;i>=0;i--){const d=debris[i],u=d.userData;u.t-=dt;if(u.sp)d.scale.setScalar(Math.max(.01,u.t/.3*1.4));u.v.y-=12*dt;d.position.addScaledVector(u.v,dt);if(u.t<=0){scene.remove(d);debris.splice(i,1)}}
+  near=Math.hypot(P.pos.x,P.pos.z-1)<2.9;shopBtn.style.display=near&&live?'block':'none';
   if(tt>0){tt-=dt;if(tt<=0)toast.style.opacity=0}
   sun.position.set(P.pos.x+60,P.pos.y+90,P.pos.z+40);sun.target.position.copy(P.pos);
   R.render(scene,cam);
